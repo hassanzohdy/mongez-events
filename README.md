@@ -301,3 +301,7 @@ events.on("cart.remove", (cartItem) => {
 
 events.unsubscribeNamespace("cart"); // all listeners will be cleared
 ```
+
+## TODO
+
+- Add test.
