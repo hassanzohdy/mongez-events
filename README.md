@@ -304,4 +304,4 @@ events.unsubscribeNamespace("cart"); // all listeners will be cleared
 
 ## TODO
 
-- Add test.
+- Add tests.
