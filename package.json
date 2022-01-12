@@ -1,6 +1,6 @@
 {
     "name": "@mongez/events",
-    "version": "1.0.8",
+    "version": "1.0.9",
     "description": "Simple Event Driven System Handler",
     "main": "src/index.ts",
     "author": "hassanzohdy",
