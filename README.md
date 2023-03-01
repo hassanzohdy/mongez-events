@@ -31,7 +31,7 @@ import events from "@mongez/events";
 
 // First add an event listener for some event, let's call it `numberChange`
 
-events.on("numberChange", (number) => {
+events.subscribe("numberChange", (number) => {
   console.log(number); // 5
 });
 
@@ -48,34 +48,26 @@ The `on` method is called a subscription method that we subscribe our callback, 
 
 You can subscribe to any event using one of the following methods: `on` | `addEventListener` or `subscribe`.
 
-They are all interchangeable methods, except that `subscribe` method can listen only to one event unlike `addEventListener` and `on` methods, see the next section for more information.
-
-## Subscribing to one or more event
-
-You can subscribe to one or more events by separating it with a whitespace, for example:
+They are all interchangeable methods, but it's recommended to use `subscribe` method as it's more readable and also it is the base method for the other two methods.
 
 ```ts
 import events from "@mongez/events";
 
-// subscribed to two events headerChange and footerChange
-events.addEventListener("headerChange footerChange", () => {
-  console.log("Header or footer has been changed");
+// subscribe to the `numberChange` event
+events.subscribe("numberChange", (number) => {
+  console.log(number); // 5
 });
 
-// this will only subscribe to one event even if there is a whitespace
-const cartUpdateSubscription = events.subscribe("cart.update", () => {
-  console.log("cart has been updated");
+// subscribe to the `numberChange` event
+events.on("numberChange", (number) => {
+  console.log(number); // 5
 });
 
-events.trigger("headerChange");
-
-// or
-events.trigger("footerChange");
+// subscribe to the `numberChange` event
+events.addEventListener("numberChange", (number) => {
+  console.log(number); // 5
+});
 ```
-
-This can be useful in some scenarios when you want to perform certain actions on more than one event.
-
-> Please note as mentioned earlier this works only with the `addEventListener` and `on` methods but not with the `subscribe` method as it accepts only one event.
 
 ## Unsubscribe to event
 
@@ -91,21 +83,6 @@ const headerSubscription = events.subscribe("headerChange", () => {
 // three seconds later
 setTimeout(() => {
   headerSubscription.unsubscribe();
-}, 3000);
-```
-
-If you subscribing to more than one event, then an array will be returned instead.
-
-```ts
-import events from "@mongez/events";
-
-const subscriptionsList = events.on("headerChange footerChange", () => {
-  console.log("Header or footer has been changed");
-});
-
-// three seconds later
-setTimeout(() => {
-  subscriptionsList.forEach((subscription) => subscription.unsubscribe());
 }, 3000);
 ```
 
@@ -160,16 +137,6 @@ const mode = "quantityChanged";
 events.trigger("cart.update", cartData, mode);
 ```
 
-Each trigger returns `EventTriggerResponse` object that gives you more information about the result of the trigger.
-
-We can also trigger more than one event at the same time.
-
-```ts
-import events from "@mongez/events";
-
-events.emit("headerChange footerChange");
-```
-
 ### Returning values from the trigger
 
 If any listener return any value, the last return value from the listeners will be returned.
@@ -222,8 +189,8 @@ As we can subscribe to events, we may also need to clear all event subscriptions
 ```ts
 import events from "@mongez/events";
 
-// clear all event listeners to the `headerChange` and `footerChange`
-events.off("headerChange footerChange");
+// clear all event listeners to the `headerChange` and `footerChange` events
+events.off("headerChange").off("footerChange");
 ```
 
 You may also clear the entire events listeners by not passing any arguments to the `off` or to the `unsubscribe` method.
@@ -257,8 +224,6 @@ events.triggerAll("cart.update", {
 
 Another advantage of the `triggerAll` method is that it returns an instance of `EventTriggerResponse` that informs you the state of the trigger process, the event name, number of called listeners and its outputs.
 
-> If The `triggerAll` method triggers more than one event, then it will return an array of `EventTriggerResponse`
-
 ```ts
 type EventTriggerResponse = {
   /**
@@ -270,7 +235,7 @@ type EventTriggerResponse = {
    */
   length: number;
   /**
-   * List of all returned values from callback, undefined values will not be included
+   * List of all returned values from each subscription callback, undefined values will not be included
    */
   results: any[];
 };
@@ -302,6 +267,41 @@ events.on("cart.remove", (cartItem) => {
 events.unsubscribeNamespace("cart"); // all listeners will be cleared
 ```
 
+## Get all event subscriptions
+
+To get all subscriptions of certain event, you can use the `subscriptions` method.
+
+```ts
+import events from "@mongez/events";
+
+events.on("headerChange", () => {
+  console.log("Header has been changed");
+});
+
+events.on("headerChange", () => {
+  console.log("Header has been changed again");
+});
+
+// get length of all subscriptions to the `headerChange` event
+console.log(events.subscriptions("headerChange").length); // 2
+```
+
+## Tests
+
+To run the tests, run the following command
+
+```bash
+yarn test
+```
+
+## Change Log
+
+- V2.0.0 (01 Mar 2023)
+  - Removed multiple events subscriptions and unsubscriptions.
+  - Added Unit Tests.
+  - Enhanced parameters and return types.
+
 ## TODO
 
-- Add tests.
+- Add `triggerAsync` method to trigger events asynchronously.
+- Add `triggerAllAsync` method to trigger all events asynchronously.

@@ -1,6 +1,11 @@
-export type EventListenersList = {
+export type EventListeners = {
   [eventName: string]: EventSubscription[];
 };
+
+export type EventListenersList = {
+  event: string;
+  subscriptions: EventSubscription[];
+}[];
 
 export type EventSubscription = {
   /**

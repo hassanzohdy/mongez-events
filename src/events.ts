@@ -1,49 +1,32 @@
 import EventsListeners from "./EventsListeners";
-import {
-  EventTriggerResponse,
-  EventSubscription,
-  EventListenersList,
-} from "./types";
+import { EventSubscription, EventTriggerResponse } from "./types";
 
 class Events {
+  /**
+   * Events listeners
+   */
   private events = new EventsListeners();
 
   /**
    * Add new callback to the given event
-   * This method is alias to addEventListener
    *
+   * @alias subscribe
    */
-  public on(
-    event: string,
-    callback: Function
-  ): EventSubscription | EventSubscription[] {
+  public on(event: string, callback: Function) {
     return this.addEventListener(event, callback);
   }
 
   /**
-   * Add event listener
-   *
-   * @param string|array event
+   * @alias subscribe
    */
-  public addEventListener(
-    event: string,
-    callback: Function
-  ): EventSubscription | EventSubscription[] {
-    if (event.includes(" ")) {
-      let subscriptions: EventSubscription[] = [];
-      for (let eventName of event.split(" ")) {
-        subscriptions.push(this.subscribe(eventName, callback));
-      }
-      return subscriptions;
-    } else {
-      return this.subscribe(event, callback);
-    }
+  public addEventListener(event: string, callback: Function) {
+    return this.subscribe(event, callback);
   }
 
   /**
    * Subscribe to the given event
    */
-  public subscribe(event: string, callback: Function): EventSubscription {
+  public subscribe(event: string, callback: Function) {
     const eventHandler = this.events.get(event) || [];
     let subscription: EventSubscription = {
       callback,
@@ -68,19 +51,8 @@ class Events {
 
   /**
    * Trigger the given event
-   *
    */
   public trigger(event: string, ...args: any[]) {
-    if (event.includes(" ")) {
-      let events: string[] = event.split(" ");
-      const returns: { [key: string]: any } = {};
-      for (let event of events) {
-        returns[event] = this.trigger(event, ...args);
-      }
-
-      return returns;
-    }
-
     const callbacks = this.events.get(event);
 
     if (callbacks.length === 0) return;
@@ -101,7 +73,7 @@ class Events {
   }
 
   /**
-   * An alias to trigger method
+   * @alias trigger
    */
   public emit(event: string, ...args: any[]) {
     return this.trigger(event, ...args);
@@ -109,28 +81,8 @@ class Events {
 
   /**
    * Trigger the event and do not stop on event callback returning false
-   *
-   * @param {string} event
-   * @param  {any[]} args
-   * @returns {any[]}
    */
-  public triggerAll(
-    event: string,
-    ...args: any[]
-  ): EventTriggerResponse | EventTriggerResponse[] {
-    if (event.includes(" ")) {
-      let events = event.split(" ");
-      let multipleEvents: EventTriggerResponse[] = [];
-
-      for (let event of events) {
-        multipleEvents.push(
-          this.triggerAll(event, ...args) as EventTriggerResponse
-        );
-      }
-
-      return multipleEvents;
-    }
-
+  public triggerAll(event: string, ...args: any[]) {
     const callbacks = this.events.get(event);
 
     let returnedOutput: EventTriggerResponse = {
@@ -138,6 +90,10 @@ class Events {
       length: 0,
       results: [],
     };
+
+    if (callbacks.length === 0) {
+      return returnedOutput;
+    }
 
     for (let callback of callbacks) {
       let callbackReturn = callback.dispatch(...args);
@@ -153,61 +109,53 @@ class Events {
   }
 
   /**
-   * Alias to off method
+   * Remove all events subscriptions
    */
-  public unsubscribe(events: string) {
-    return this.off(events);
-  }
-
-  /**
-   * This method is used to clear event(s) or remove all events callbacks
-   *
-   * @param  {string|none} events
-   */
-  public off(events: string) {
-    if (!events) {
+  public unsubscribe(event?: string) {
+    if (!event) {
       this.events.clear();
       return this;
     }
 
-    const eventsList = events.split(" ");
-
-    for (let event of eventsList) {
-      this.events.delete(event);
-    }
+    this.events.delete(event);
 
     return this;
   }
 
   /**
-   * Remove all events that belongs to the given namespace
-   *
-   * @param   {string} namespace
-   * @returns {Events}
+   * @alias unsubscribe
    */
-  public unsubscribeNamespace(namespace: string): Events {
+  public off(events?: string) {
+    return this.unsubscribe(events);
+  }
+
+  /**
+   * Remove all events that belongs to the given namespace
+   */
+  public unsubscribeNamespace(namespace: string) {
     this.events.deleteByNamespace(namespace);
     return this;
   }
 
   /**
    * List all events by namespace
-   *
-   * @param {string} namespace
-   * @returns {EventListenersList}
    */
-  public getByNamespace(namespace: string): EventListenersList {
+  public getByNamespace(namespace: string) {
     return this.events.getByNamespace(namespace);
   }
 
   /**
    * Get all events listeners by namespace
-   *
-   * @param {string} namespace
-   * @returns {EventSubscription[]}
    */
-  public getByNamespaceArray(namespace: string): EventSubscription[] {
+  public getByNamespaceArray(namespace: string) {
     return this.events.getByNamespaceArray(namespace);
+  }
+
+  /**
+   * Get all event subscriptions for the given event
+   */
+  public subscriptions(event: string) {
+    return this.events.get(event);
   }
 }
 

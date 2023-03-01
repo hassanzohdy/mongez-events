@@ -1,31 +1,50 @@
-import { EventListenersList, EventSubscription } from "./types";
+import { EventListeners, EventListenersList, EventSubscription } from "./types";
 
 export default class EventsListeners {
-  protected listeners: EventListenersList = {};
+  protected listeners: EventListeners = {};
+
+  /**
+   * Add event subscriptions
+   */
   public set(event: string, subscriptions: EventSubscription[]) {
     this.listeners[event] = subscriptions;
   }
 
-  public get(event: string): EventSubscription[] {
+  /**
+   * Get all subscriptions for the given event
+   */
+  public get(event: string) {
     const subscriptions: EventSubscription[] = this.listeners[event] || [];
 
     return subscriptions;
   }
 
-  public clear(): void {
+  /**
+   * Clear all events
+   */
+  public clear() {
     this.listeners = {};
   }
 
-  public has(event: string): boolean {
+  /**
+   * Check if the given event has subscriptions
+   */
+  public has(event: string) {
     return typeof this.listeners[event] !== "undefined";
   }
 
-  public delete(event: string): void {
+  /**
+   * Delete the given event
+   */
+  public delete(event: string) {
     delete this.listeners[event];
   }
 
-  public getByNamespace(namespace: string): EventListenersList {
-    let events: EventListenersList = {};
+  /**
+   * List all events by namespace
+   */
+  public getByNamespace(namespace: string) {
+    let events: EventListeners = {};
     for (const event in this.listeners) {
       if (event.startsWith(namespace)) {
         events[event] = this.listeners[event];
@@ -35,17 +54,27 @@ export default class EventsListeners {
     return events;
   }
 
-  public getByNamespaceArray(namespace: string): EventSubscription[] {
-    let eventSubscriptions: EventSubscription[] = [];
+  /**
+   * Get all events listeners by namespace as an array
+   */
+  public getByNamespaceArray(namespace: string) {
+    let eventSubscriptions: EventListenersList = [];
     for (const event in this.listeners) {
       if (event.startsWith(namespace)) {
-        eventSubscriptions = [...eventSubscriptions, ...this.listeners[event]];
+        eventSubscriptions.push({
+          event: event,
+          subscriptions: this.listeners[event],
+        });
       }
     }
 
     return eventSubscriptions;
   }
 
+  /**
+   * Delete all events that belongs to the given namespace
+   * i.e "users" namespace will affect on: users.created, users.updated, users.deleted will be deleted
+   */
   public deleteByNamespace(namespace: string): void {
     for (const event in this.listeners) {
       if (event.startsWith(namespace)) {

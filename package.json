@@ -1,12 +1,22 @@
 {
     "name": "@mongez/events",
-    "version": "1.0.9",
+    "version": "2.0.0",
     "description": "Simple Event Driven System Handler",
     "main": "src/index.ts",
     "author": "hassanzohdy",
+    "scripts": {
+        "test": "jest tests"
+    },
     "repository": {
         "type": "git",
         "url": "https://github.com/hassanzohdy/mongez-events"
+    },
+    "devDependencies": {
+        "@types/jest": "^29.4.0",
+        "jest": "^29.4.3",
+        "jest-esm-jsx-transform": "^1.0.0",
+        "ts-jest": "^29.0.5",
+        "typescript": "^4.9.5"
     },
     "keywords": [
         "mongez",
