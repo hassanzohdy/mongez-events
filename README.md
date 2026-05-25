@@ -286,6 +286,52 @@ events.on("headerChange", () => {
 console.log(events.subscriptions("headerChange").length); // 2
 ```
 
+## TriggerAsync
+
+To trigger events asynchronously, you can use the `triggerAsync` method.
+
+```ts
+import events from "@mongez/events";
+
+events.on("cart.update", (cartData) => {
+  console.log(cartData.totalQuantity); // output: 0
+});
+
+async function main() {
+  await events.triggerAsync("cart.update", {
+    totalQuantity: 0,
+  });
+}
+
+main();
+```
+
+This will wait for each listener to finish its execution before going to the next listener.
+
+> If any resolved value is returned from any listener, the last resolved value will be returned and all remaining callbacks will be ignored.
+
+## TriggerAllAsync
+
+To trigger all events asynchronously, you can use the `triggerAllAsync` method.
+
+```ts
+import events from "@mongez/events";
+
+events.on("cart.update", (cartData) => {
+  console.log(cartData.totalQuantity); // output: 0
+});
+
+async function main() {
+  await events.triggerAllAsync("cart.update", {
+    totalQuantity: 0,
+  });
+}
+
+main();
+```
+
+Works exactly like `triggerAsync` but it will call all listeners regardless the return of each listener.
+
 ## Tests
 
 To run the tests, run the following command

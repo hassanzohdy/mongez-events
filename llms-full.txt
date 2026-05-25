@@ -1,0 +1,183 @@
+# @mongez/events — full reference
+
+> Tiny, zero-dependency event bus. Segment-aware namespace matching, stop-on-`false` semantics, async variants, namespace-scoped cleanup.
+
+## Install
+
+```sh
+yarn add @mongez/events
+```
+
+Zero runtime dependencies.
+
+## Public exports
+
+```ts
+import events, {
+  type EventSubscription,
+  type EventListeners,
+  type EventListenersList,
+  type EventTriggerResponse,
+} from "@mongez/events";
+```
+
+The default export is a singleton instance — `events.subscribe(...)`, `events.trigger(...)`, etc.
+
+## API
+
+### Subscribe
+
+```ts
+events.subscribe(event: string, callback: Function): EventSubscription
+events.on(event, callback): EventSubscription                    // alias
+events.addEventListener(event, callback): EventSubscription      // alias
+```
+
+Returns:
+
+```ts
+type EventSubscription = {
+  callback: Function;
+  event: string;
+  dispatch(...args: any[]): any;     // invoke callback directly, bypassing bus
+  unsubscribe(): void;
+};
+```
+
+There is no `off(event, callback)` form. Hold the returned subscription and call `unsubscribe()`.
+
+### Trigger (short-circuits on `false`)
+
+```ts
+events.trigger(event: string, ...args: any[]): any
+events.emit(event, ...args): any                              // alias
+```
+
+- Invokes every callback for `event` in subscription order.
+- If any callback returns `false`, the chain stops and `trigger` returns `false`. Use for veto / "before" hooks.
+- Otherwise returns the last non-`undefined` return value.
+
+### Trigger all (no short-circuit)
+
+```ts
+events.triggerAll(event: string, ...args: any[]): EventTriggerResponse
+
+type EventTriggerResponse = {
+  event: string;
+  length: number;
+  results: any[];   // non-undefined returns only
+};
+```
+
+Use for analytics, multi-listener notifications, aggregation patterns.
+
+### Async variants
+
+```ts
+events.triggerAsync(event, ...args): Promise<any>
+events.triggerAllAsync(event, ...args): Promise<EventTriggerResponse>
+```
+
+Callbacks are awaited **sequentially**, in subscription order. For parallel dispatch, use `subscriptions(event)` + `Promise.all`. The async variants honor `return false` (after awaiting the offending callback).
+
+### Unsubscribe
+
+```ts
+events.unsubscribe(event?: string): this    // detach one event, or all when undefined
+events.off(event?: string): this            // alias
+events.unsubscribeNamespace(namespace: string): this
+```
+
+### Inspect
+
+```ts
+events.subscriptions(event: string): EventSubscription[]
+events.getByNamespace(namespace: string): { [eventName]: EventSubscription[] }
+events.getByNamespaceArray(namespace: string): { event: string; subscriptions: EventSubscription[] }[]
+```
+
+## Namespace matching
+
+Event names are dot-separated. Namespace operations match at segment boundaries — `users.1` matches `users.1` and `users.1.updated`, but NOT `users.10` / `users.11` / `users.100`.
+
+Implementation:
+
+```ts
+event === namespace || event.startsWith(namespace + ".")
+```
+
+So:
+
+| namespace | matches | doesn't match |
+|---|---|---|
+| `"users"` | `users`, `users.1`, `users.1.updated` | `usersTable`, `users2` |
+| `"users.1"` | `users.1`, `users.1.profile` | `users.10`, `users.11`, `users.100` |
+| `"atoms.cart"` | `atoms.cart.update`, `atoms.cart.reset` | `atoms.cartItems.update` |
+
+## Patterns
+
+### Veto pattern (stop-on-`false`)
+
+```ts
+events.subscribe("save.before", (data) => {
+  if (!isValid(data)) return false;
+});
+
+const ok = events.trigger("save.before", payload);
+if (ok === false) return;
+performSave(payload);
+events.trigger("save.after", payload);
+```
+
+### Aggregation pattern
+
+```ts
+events.subscribe("table.columns", () => ({ field: "name", label: "Name" }));
+events.subscribe("table.columns", () => ({ field: "email", label: "Email" }));
+
+const { results } = events.triggerAll("table.columns");
+```
+
+### Feature-scoped lifecycle
+
+```ts
+function mount() {
+  events.subscribe("users.created", onCreate);
+  events.subscribe("users.updated", onUpdate);
+}
+function unmount() {
+  events.unsubscribeNamespace("users");
+}
+```
+
+### Async chains
+
+```ts
+events.subscribe("file.uploaded", async (file) => await scan(file));
+events.subscribe("file.uploaded", async (file) => await thumbnail(file));
+
+// Sequential
+await events.triggerAsync("file.uploaded", file);
+
+// Parallel
+await Promise.all(
+  events.subscriptions("file.uploaded").map(s => s.dispatch(file)),
+);
+```
+
+## Used by `@mongez/atom`
+
+Every atom emits lifecycle events under the namespace `atoms.${key}`:
+
+- `atoms.${key}.update` — `update`, `change`, `merge`
+- `atoms.${key}.reset` — `reset`, `silentReset`
+- `atoms.${key}.delete` — `destroy`
+
+`atom.destroy()` calls `events.unsubscribeNamespace(``atoms.${key}``)`. The segment-aware match ensures destroying `users.1` doesn't wipe `users.10`.
+
+## What this package does NOT do
+
+- **Typed events.** Callbacks are `Function`; you cast at the use site.
+- **Backpressure / reactive streams.** Use RxJS for that.
+- **Cross-window / cross-process.** Use `BroadcastChannel`.
+- **DOM events.** Use `addEventListener` on the target.

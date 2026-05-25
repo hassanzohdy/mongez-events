@@ -1,0 +1,29 @@
+# @mongez/events
+
+> A tiny, zero-dependency event bus with segment-aware namespace matching. Subscribe / trigger / unsubscribe with optional async dispatch and namespace-scoped cleanup. Used internally by `@mongez/atom` for atom lifecycle events; usable standalone for any pub/sub need.
+
+The whole API lives on a single default export — `import events from "@mongez/events"`. Every operation is synchronous unless you opt into `triggerAsync` / `triggerAllAsync`.
+
+## Docs
+
+- [Overview](https://raw.githubusercontent.com/hassanzohdy/events/main/skills/overview.md): What it is, when to reach for it, install.
+- [README](https://raw.githubusercontent.com/hassanzohdy/events/main/README.md): Usage walk-through.
+
+## Reference
+
+- [Events bus](https://raw.githubusercontent.com/hassanzohdy/events/main/skills/bus.md): `subscribe` (and aliases `on` / `addEventListener`), `trigger` / `emit`, `triggerAll`, `triggerAsync`, `triggerAllAsync`, `subscriptions`.
+- [Namespaces](https://raw.githubusercontent.com/hassanzohdy/events/main/skills/namespaces.md): `unsubscribeNamespace`, `getByNamespace`, `getByNamespaceArray` — segment-aware matching (`users.1` doesn't accidentally match `users.10`).
+- [Recipes](https://raw.githubusercontent.com/hassanzohdy/events/main/skills/recipes.md): Per-feature namespacing, short-circuiting handlers via `return false`, aggregating callback returns with `triggerAll`, async event chains.
+
+## Quick rules
+
+1. **One default export.** `import events from "@mongez/events"`. Access methods on the `events` instance.
+2. **Subscription returns `{ unsubscribe }`.** Hold onto it; call `unsubscribe()` to detach. There's no manual `off(event, callback)` — use the returned handle.
+3. **`trigger` (alias `emit`) stops on `false`.** If any callback returns `false`, the trigger short-circuits and returns `false`. Use `triggerAll` if you don't want that behavior.
+4. **Namespace matching is segment-aware.** `unsubscribeNamespace("users.1")` matches `users.1` and `users.1.updated` but NOT `users.10` or `users.100`.
+5. **Async variants run callbacks sequentially.** `triggerAsync` awaits each callback in order. Use `Promise.all` yourself if you want parallel.
+
+## Optional
+
+- [Full single-file reference (llms-full.txt)](https://raw.githubusercontent.com/hassanzohdy/events/main/llms-full.txt)
+- [GitHub repository](https://github.com/hassanzohdy/events)

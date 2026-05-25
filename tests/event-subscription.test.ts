@@ -1,3 +1,4 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
 import events from "../src";
 
 describe("Event Subscription", () => {
@@ -12,7 +13,7 @@ describe("Event Subscription", () => {
   });
 
   it("should contain the exact callback listener in EventSubscription", () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     const subscription = events.subscribe("test", callback);
 
     expect(subscription.callback).toBe(callback);
@@ -25,23 +26,23 @@ describe("Event Subscription", () => {
   });
 
   it('should subscribe using "on" method', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     const subscription = events.on("test", callback);
 
     expect(subscription.callback).toBe(callback);
   });
 
   it('should subscribe using "addEventListener" method', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     const subscription = events.addEventListener("test", callback);
 
     expect(subscription.callback).toBe(callback);
   });
 
   it('should contain all event subscriptions using "subscriptions" method', () => {
-    const callback = jest.fn();
-    const callback2 = jest.fn();
-    const callback3 = jest.fn();
+    const callback = vi.fn();
+    const callback2 = vi.fn();
+    const callback3 = vi.fn();
 
     events.subscribe("test", callback);
     events.on("test", callback2);

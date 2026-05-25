@@ -41,12 +41,22 @@ export default class EventsListeners {
   }
 
   /**
+   * Match an event name against a namespace by segment boundary, not by raw
+   * prefix. Without this, `"users.created"` matches the namespace `"user"`
+   * (false positive) and destroying namespace `"atoms.foo.clone.1"` would
+   * also wipe `"atoms.foo.clone.10"`, `"atoms.foo.clone.100"`, etc.
+   */
+  protected matchesNamespace(event: string, namespace: string): boolean {
+    return event === namespace || event.startsWith(namespace + ".");
+  }
+
+  /**
    * List all events by namespace
    */
   public getByNamespace(namespace: string) {
     let events: EventListeners = {};
     for (const event in this.listeners) {
-      if (event.startsWith(namespace)) {
+      if (this.matchesNamespace(event, namespace)) {
         events[event] = this.listeners[event];
       }
     }
@@ -60,7 +70,7 @@ export default class EventsListeners {
   public getByNamespaceArray(namespace: string) {
     let eventSubscriptions: EventListenersList = [];
     for (const event in this.listeners) {
-      if (event.startsWith(namespace)) {
+      if (this.matchesNamespace(event, namespace)) {
         eventSubscriptions.push({
           event: event,
           subscriptions: this.listeners[event],
@@ -77,7 +87,7 @@ export default class EventsListeners {
    */
   public deleteByNamespace(namespace: string): void {
     for (const event in this.listeners) {
-      if (event.startsWith(namespace)) {
+      if (this.matchesNamespace(event, namespace)) {
         delete this.listeners[event];
       }
     }

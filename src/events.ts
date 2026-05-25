@@ -109,6 +109,58 @@ class Events {
   }
 
   /**
+   * Trigger all callbacks asynchronously
+   */
+  public async triggerAsync(event: string, ...args: any[]) {
+    const callbacks = this.events.get(event);
+
+    if (callbacks.length === 0) return;
+
+    let returnValue;
+
+    for (let callback of callbacks) {
+      let callbackReturn = await callback.dispatch(...args);
+
+      if (callbackReturn === false) {
+        return false;
+      } else if (callbackReturn !== undefined) {
+        returnValue = callbackReturn;
+      }
+    }
+
+    return returnValue;
+  }
+
+  /**
+   * Trigger all callbacks asynchronously and do not stop on event callback returning false
+   */
+  public async triggerAllAsync(event: string, ...args: any[]) {
+    const callbacks = this.events.get(event);
+
+    let returnedOutput: EventTriggerResponse = {
+      event,
+      length: 0,
+      results: [],
+    };
+
+    if (callbacks.length === 0) {
+      return returnedOutput;
+    }
+
+    for (let callback of callbacks) {
+      let callbackReturn = await callback.dispatch(...args);
+
+      returnedOutput.length++;
+
+      if (callbackReturn !== undefined) {
+        returnedOutput.results.push(callbackReturn);
+      }
+    }
+
+    return returnedOutput;
+  }
+
+  /**
    * Remove all events subscriptions
    */
   public unsubscribe(event?: string) {

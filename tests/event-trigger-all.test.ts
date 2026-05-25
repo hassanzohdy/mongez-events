@@ -1,3 +1,4 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
 import events from "../src";
 
 describe("Event Trigger All", () => {
@@ -6,8 +7,8 @@ describe("Event Trigger All", () => {
   });
 
   it("should trigger all event listeners even if one returns false", () => {
-    const callback = jest.fn(() => false);
-    const callback2 = jest.fn(() => true);
+    const callback = vi.fn(() => false);
+    const callback2 = vi.fn(() => true);
     events.subscribe("test", callback);
     events.subscribe("test", callback2);
     events.triggerAll("test");
@@ -17,8 +18,8 @@ describe("Event Trigger All", () => {
   });
 
   it("should return an object with the event name, length of results, and results", () => {
-    const callback = jest.fn(() => false);
-    const callback2 = jest.fn(() => true);
+    const callback = vi.fn(() => false);
+    const callback2 = vi.fn(() => true);
     events.subscribe("test", callback);
     events.subscribe("test", callback2);
     const result = events.triggerAll("test");
