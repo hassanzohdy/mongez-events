@@ -1,7 +1,9 @@
 ---
 name: mongez-events-namespaces
-description: How dot-separated event namespaces work in @mongez/events — bulk cleanup, bulk query, and segment-boundary matching semantics.
-when_to_use: User calls events.unsubscribeNamespace, events.getByNamespace, or events.getByNamespaceArray; user wants to clean up all listeners for a feature or module at once; user asks how namespace matching works or why segment boundaries matter; user is managing lifecycle cleanup for a group of related event subscriptions.
+description: |
+  How dot-separated event namespaces work in @mongez/events — bulk cleanup, bulk query, and segment-boundary matching semantics.
+  TRIGGER when: code calls `events.unsubscribeNamespace`, `events.getByNamespace`, or `events.getByNamespaceArray`, or references types `EventListeners` / `EventListenersList`; user asks "how do I clean up all listeners for a feature", "how does namespace matching work", "why doesn't `users.1` match `users.10`"; dot-separated event names like `users.created` or `atoms.${key}.update` appear in the code.
+  SKIP: single-event `subscribe`/`trigger`/`unsubscribe` calls — use `mongez-events-bus` instead; onboarding / "what is this package" questions — use `mongez-events-overview`; copy-paste recipes (veto, aggregation, async chains, React `useEffect`) — use `mongez-events-recipes`; CSS / DOM namespacing concerns are unrelated.
 ---
 # Namespaces
 

@@ -1,5 +1,9 @@
 # @mongez/events — full reference
 
+> **Auto-trigger when loading this full reference:** code uses `import events from "@mongez/events"` or pulls types `EventSubscription`, `EventListeners`, `EventListenersList`, `EventTriggerResponse`; code calls `events.subscribe` / `events.on` / `events.addEventListener`, `events.trigger` / `events.emit`, `events.triggerAll`, `events.triggerAsync`, `events.triggerAllAsync`, `events.unsubscribe` / `events.off`, `events.subscriptions`, `events.unsubscribeNamespace`, `events.getByNamespace`, or `events.getByNamespaceArray`; dot-separated event names like `users.created` or `atoms.${key}.update` appear; user asks "what is @mongez/events", "how do I subscribe / emit / veto an event", "how do namespaces match", "how do I clean up listeners in React or tests", "how do I aggregate handler results", or "events vs RxJS / BroadcastChannel / @mongez/atom".
+>
+> **Skip when:** the code is about a sibling package (`@mongez/atom`, `@mongez/react-atom`, `@mongez/cache`, etc.) and not the events bus itself; native DOM `addEventListener` on `window` / elements; Node.js `EventEmitter` / `events` module; RxJS `Subject` / `Observable`; `BroadcastChannel`; CSS / DOM namespacing.
+
 > Tiny, zero-dependency event bus. Segment-aware namespace matching, stop-on-`false` semantics, async variants, namespace-scoped cleanup.
 
 ## Install

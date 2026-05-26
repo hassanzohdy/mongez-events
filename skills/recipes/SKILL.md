@@ -1,7 +1,9 @@
 ---
 name: mongez-events-recipes
-description: Idiomatic patterns for common @mongez/events use cases — veto hooks, aggregation, async chains, React cleanup, and test teardown.
-when_to_use: User wants a practical example of how to use @mongez/events in a real scenario; user is implementing veto/before-hook patterns, aggregating results from multiple listeners, chaining async handlers, cleaning up subscriptions in React useEffect, or resetting the bus between tests.
+description: |
+  Idiomatic patterns for common @mongez/events use cases — veto hooks, aggregation, async chains, React cleanup, and test teardown.
+  TRIGGER when: code combines `events.subscribe` + `events.trigger` / `events.triggerAll` / `events.triggerAsync` into a pattern (veto `return false`, aggregating `results`, sequential vs parallel dispatch via `subscriptions(...).map(s => s.dispatch(...))`, `useEffect` cleanup with `sub.unsubscribe()`, `afterEach(() => events.unsubscribe())`); user asks "how do I implement before/after hooks", "how do I aggregate handler results", "how do I clean up events in React", "how do I reset the bus between tests".
+  SKIP: raw single-call API lookup — use `mongez-events-bus`; namespace-matching semantics or bulk cleanup theory — use `mongez-events-namespaces`; package onboarding / install — use `mongez-events-overview`; React state recipes are usually cleaner with `@mongez/react-atom` than raw events.
 ---
 # Recipes
 

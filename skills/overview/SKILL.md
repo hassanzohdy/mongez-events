@@ -1,7 +1,9 @@
 ---
 name: mongez-events-overview
-description: High-level orientation to the @mongez/events package — what it is, when to use it, and the mental model behind the global bus.
-when_to_use: User is new to @mongez/events and wants to understand what it does, when to reach for it, or how it relates to @mongez/atom; user asks about installing @mongez/events; user imports from @mongez/events for the first time.
+description: |
+  High-level orientation to the @mongez/events package — what it is, when to use it, and the mental model behind the global bus.
+  TRIGGER when: code introduces a first `import events from "@mongez/events"` (or pulls types `EventSubscription`, `EventListeners`, `EventListenersList`, `EventTriggerResponse`); user asks "what is @mongez/events", "when should I use @mongez/events vs @mongez/atom / RxJS / BroadcastChannel", "how do I install @mongez/events", "what's the mental model of the events bus".
+  SKIP: concrete API signatures and call semantics — use `mongez-events-bus`; namespace matching rules and bulk cleanup — use `mongez-events-namespaces`; idiomatic recipes (veto, aggregation, React, tests) — use `mongez-events-recipes`; React state coordination questions are usually better answered by `@mongez/react-atom`.
 ---
 # Overview
 

@@ -7,13 +7,17 @@ The whole API lives on a single default export — `import events from "@mongez/
 ## Docs
 
 - [Overview](https://raw.githubusercontent.com/hassanzohdy/events/main/skills/overview.md): What it is, when to reach for it, install.
+  - *Auto-trigger:* Load on the first `import events from "@mongez/events"` or when the user asks what the package is, when to use it, or how it compares to atoms/RxJS.
 - [README](https://raw.githubusercontent.com/hassanzohdy/events/main/README.md): Usage walk-through.
 
 ## Reference
 
 - [Events bus](https://raw.githubusercontent.com/hassanzohdy/events/main/skills/bus.md): `subscribe` (and aliases `on` / `addEventListener`), `trigger` / `emit`, `triggerAll`, `triggerAsync`, `triggerAllAsync`, `subscriptions`.
+  - *Auto-trigger:* Load when code calls `events.subscribe`/`on`/`trigger`/`emit`/`triggerAll`/`triggerAsync`/`subscriptions` or references the `EventSubscription` / `EventTriggerResponse` types.
 - [Namespaces](https://raw.githubusercontent.com/hassanzohdy/events/main/skills/namespaces.md): `unsubscribeNamespace`, `getByNamespace`, `getByNamespaceArray` — segment-aware matching (`users.1` doesn't accidentally match `users.10`).
+  - *Auto-trigger:* Load when code calls `events.unsubscribeNamespace` / `getByNamespace` / `getByNamespaceArray` or uses dot-segmented event names for bulk cleanup.
 - [Recipes](https://raw.githubusercontent.com/hassanzohdy/events/main/skills/recipes.md): Per-feature namespacing, short-circuiting handlers via `return false`, aggregating callback returns with `triggerAll`, async event chains.
+  - *Auto-trigger:* Load when implementing veto/before hooks, aggregating handler results, async event chains, React `useEffect` cleanup, or `afterEach` bus reset.
 
 ## Quick rules
 
