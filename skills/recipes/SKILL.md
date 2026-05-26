@@ -103,15 +103,16 @@ afterEach(() => {
 });
 ```
 
-## Debugging — list live subscriptions
+## Debugging — list live subscriptions under a namespace
 
 ```ts
-const snapshot = events.getByNamespaceArray("");
-// "" is a prefix of every event name, so this returns every subscription.
+const snapshot = events.getByNamespaceArray("users");
 console.table(snapshot.map(e => ({ event: e.event, count: e.subscriptions.length })));
 ```
 
-(That works because `getByNamespaceArray("")` matches every event via the
-`event === "" || event.startsWith(".")` path, but it's a minor abuse of
-the API — for real introspection consider exposing a helper from your
-side.)
+`getByNamespaceArray` matches at segment boundaries, so you need a real
+namespace prefix — passing `""` matches nothing because the matcher is
+`event === namespace || event.startsWith(namespace + ".")` and no real
+event name starts with `.`. There is no public "every event" iterator;
+for full-bus introspection, expose a helper from your own side or walk
+the namespaces you actually subscribe under (`atoms`, `users`, etc.).
