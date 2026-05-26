@@ -1,353 +1,453 @@
-# Mongez Events
+<div align="center">
 
-From Wikipedia:
+# @mongez/events
 
-> In computer programming, event-driven programming is a programming paradigm in which the flow of the program is determined by events such as user actions (mouse clicks, key presses), sensor outputs, or message passing from other programs or threads. Event-driven programming is the dominant paradigm used in graphical user interfaces and other applications (e.g., JavaScript web applications) that are centered on performing certain actions in response to user input.
+**Tiny, zero-dependency pub/sub bus with dot-segment namespaces, async dispatch, and veto-style short-circuiting — runs anywhere JavaScript runs.**
 
-## Introduction
+[![npm](https://img.shields.io/npm/v/@mongez/events.svg)](https://www.npmjs.com/package/@mongez/events)
+[![license](https://img.shields.io/npm/l/@mongez/events.svg)](LICENSE)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/@mongez/events.svg)](https://bundlephobia.com/package/@mongez/events)
+[![downloads](https://img.shields.io/npm/dw/@mongez/events.svg)](https://www.npmjs.com/package/@mongez/events)
 
-In a nutshell, the event driven approach is a powerful paradigm to handle data and actions based on the occurrence of certain events.
+</div>
+
+---
+
+## Why @mongez/events?
+
+Node's built-in `EventEmitter` is Node-only and gives you nothing on the web. The DOM's `addEventListener` is the opposite — bound to elements and windows, useless for plain feature-to-feature messaging. RxJS solves both but ships an observable runtime an order of magnitude larger than most apps need. `tiny-emitter` is the right size but has no namespace cleanup and no async dispatch.
+
+`@mongez/events` is the smallest layer that does the three things ad-hoc app code actually needs: a single global bus that runs in Node, browser, and SSR; **segment-aware namespace cleanup** (`unsubscribeNamespace("users")` drops every `users.*` listener without false-matching `usersTable`); and **`return false` short-circuits** so a single listener can veto a chain. One source file, zero runtime dependencies.
+
+```ts
+import events from "@mongez/events";
+
+const sub = events.subscribe("cart.update", (cart) => {
+  console.log("cart now has", cart.totalQuantity, "items");
+});
+
+events.trigger("cart.update", { totalQuantity: 3 });
+
+sub.unsubscribe();
+```
+
+---
+
+## Features
+
+| Feature | Description |
+|---|---|
+| **One global bus** | Default export is a module-level singleton — every importer shares the same instance. |
+| **Subscribe / trigger** | `subscribe` (aliases `on`, `addEventListener`) + `trigger` (alias `emit`). Synchronous by default. |
+| **Veto / short-circuit** | A listener returning `false` stops the chain; `trigger` returns `false`. Use `triggerAll` to opt out. |
+| **Async dispatch** | `triggerAsync` / `triggerAllAsync` await callbacks in subscription order — opt into sequential async chains. |
+| **Segment-aware namespaces** | `unsubscribeNamespace("users.1")` matches `users.1.updated` but NOT `users.10` or `users.100`. |
+| **Inspect handle** | Subscription returns `{ callback, event, dispatch, unsubscribe }` — call `dispatch` to fire one listener directly, `unsubscribe` to detach. |
+| **Bulk introspection** | `getByNamespace` / `getByNamespaceArray` list everything alive under a prefix — handy for debugging. |
+| **Zero dependencies** | No runtime, no peer deps. Works in Node, browser, SSR, edge. |
+
+---
 
 ## Installation
 
-Using Yarn
+```sh
+npm install @mongez/events
+```
 
-```bash
+```sh
 yarn add @mongez/events
 ```
 
-npm
-
-```bash
-npm i @mongez/events
+```sh
+pnpm add @mongez/events
 ```
 
-### Basic usage
+---
 
-The following example shows how events can be used.
+## Quick start
 
 ```ts
 import events from "@mongez/events";
 
-// First add an event listener for some event, let's call it `numberChange`
-
-events.subscribe("numberChange", (number) => {
-  console.log(number); // 5
+// 1. Subscribe — anywhere, any module.
+const sub = events.subscribe("cart.update", (cart, mode) => {
+  console.log(mode, cart.totalQuantity);
 });
 
-// later in anywhere in the application
+// 2. Trigger — from anywhere else.
+events.trigger("cart.update", { totalQuantity: 3 }, "quantityChanged");
 
-events.trigger("numberChange", 5);
+// 3. Detach when you're done.
+sub.unsubscribe();
 ```
 
-This is a simple usage of the event system, you may have seen it before if you've worked with jQuery or with the DOM Events in general.
+The default export is a singleton. There is no `new EventBus()` — every import sees the same bus.
 
-## Event Subscription
+---
 
-The `on` method is called a subscription method that we subscribe our callback, in our case the callback that logged the number once the **numberChange** event is triggered.
-
-You can subscribe to any event using one of the following methods: `on` | `addEventListener` or `subscribe`.
-
-They are all interchangeable methods, but it's recommended to use `subscribe` method as it's more readable and also it is the base method for the other two methods.
+## Subscribing
 
 ```ts
-import events from "@mongez/events";
-
-// subscribe to the `numberChange` event
-events.subscribe("numberChange", (number) => {
-  console.log(number); // 5
-});
-
-// subscribe to the `numberChange` event
-events.on("numberChange", (number) => {
-  console.log(number); // 5
-});
-
-// subscribe to the `numberChange` event
-events.addEventListener("numberChange", (number) => {
-  console.log(number); // 5
-});
+events.subscribe(event: string, callback: Function): EventSubscription
+events.on(event, callback): EventSubscription              // alias
+events.addEventListener(event, callback): EventSubscription // alias
 ```
 
-## Unsubscribe to event
+All three are interchangeable; `subscribe` is the underlying method the others delegate to.
 
-Any subscription to certain event generates an `EventSubscription` instance as a return type, this is useful if you need to cancel that subscription at anytime.
-
-```ts
-import events from "@mongez/events";
-
-const headerSubscription = events.subscribe("headerChange", () => {
-  console.log("Header has been changed");
-});
-
-// three seconds later
-setTimeout(() => {
-  headerSubscription.unsubscribe();
-}, 3000);
-```
-
-The `EventSubscription` object has the following properties and methods
+The returned `EventSubscription` is your handle on the registration:
 
 ```ts
 type EventSubscription = {
-  /**
-   * The callback function that will be triggered on the dispatch method
-   */
-  callback: Function;
-  /**
-   * Event name
-   */
-  event: string;
-  /**
-   * A method to trigger the callback function
-   */
-  dispatch: (...args: any[]) => any;
-  /**
-   * Remove the callback from the events list
-   */
-  unsubscribe: () => void;
+  callback: Function;                  // the function you passed in
+  event: string;                       // the event name
+  dispatch: (...args: any[]) => any;   // call the callback directly, bypassing the bus
+  unsubscribe: () => void;             // remove this one subscription
 };
 ```
 
-## Event Trigger
-
-As the event will have a listener/subscriber, it also needs to be triggered in certain point so the listener will know the event is fired.
-
-You can trigger any event using `trigger` or `emit` methods and send any values in the 2nd or more arguments.
+> There is no `off(event, callback)` form. Hold onto the returned subscription and call `unsubscribe()` when you're done — that's the only way to detach a single listener without affecting the rest.
 
 ```ts
-import events from "@mongez/events";
-
-events.subscribe("cartUpdate", (cartData, mode) => {
-  console.log(mode); // quantityChanged
+const headerSub = events.subscribe("header.change", () => {
+  console.log("header changed");
 });
+
+setTimeout(() => headerSub.unsubscribe(), 3000);
 ```
 
-Now let's trigger the event from somewhere else in the project.
+---
+
+## Triggering
 
 ```ts
-const cartData = {
-  totalQuantity: 10,
-  totalPrice: 201,
-  taxes: 200,
-};
-
-const mode = "quantityChanged";
-
-events.trigger("cart.update", cartData, mode);
+events.trigger(event: string, ...args: any[]): any
+events.emit(event, ...args): any                    // alias
 ```
 
-### Returning values from the trigger
-
-If any listener return any value, the last return value from the listeners will be returned.
+Pass any number of arguments after the event name — every callback gets them in order.
 
 ```ts
-import events from "@mongez/events";
-
-events.on("cart.update", (cartData) => {
-  if (cartData.totalQuantity === 0) return "Empty Cart";
+events.subscribe("cart.update", (cart, mode) => {
+  console.log(mode, cart.totalQuantity);
 });
 
-events.on("cart.update", (cartData) => {
-  console.log(cartData.totalQuantity); // output: 0
-});
-
-let result = events.trigger("cart.update", {
-  totalQuantity: 0,
-  // ...other values
-});
-
-console.log(result); // Empty Cart
+events.trigger("cart.update", { totalQuantity: 3 }, "quantityChanged");
 ```
 
-> Please be aware that returning false will stop calling other listeners, see next section.
+### Return values
 
-### Stopping the event trigger from certain listener
-
-If we want to just stop the loop from going to the next listeners, then returning `false` will stop the loop from going to the next listeners.
+The last non-`undefined` return wins:
 
 ```ts
-import events from "@mongez/events";
-
-events.on("cart.update", (cartData) => {
-  return false; // prevent going to next listener
+events.on("cart.update", (cart) => {
+  if (cart.totalQuantity === 0) return "Empty Cart";
 });
 
-events.on("cart.update", (cartData) => {
-  console.log(cartData.totalQuantity); // this will not be triggered
+events.on("cart.update", (cart) => {
+  console.log(cart.totalQuantity);
 });
 
-let result = events.trigger("cart.update", {
-  totalQuantity: 0,
-});
+const result = events.trigger("cart.update", { totalQuantity: 0 });
+// result === "Empty Cart"  (last non-undefined return)
 ```
 
-## Removing Events
+### Veto with `return false`
 
-As we can subscribe to events, we may also need to clear all event subscriptions at once, this can be done by using `off` or `unsubscribe` method
-
-```ts
-import events from "@mongez/events";
-
-// clear all event listeners to the `headerChange` and `footerChange` events
-events.off("headerChange").off("footerChange");
-```
-
-You may also clear the entire events listeners by not passing any arguments to the `off` or to the `unsubscribe` method.
+Any callback returning `false` halts the chain — subsequent listeners are not invoked, and `trigger` itself returns `false`. This is the idiomatic "before-hook" pattern:
 
 ```ts
-import events from "@mongez/events";
-
-// clear all event listeners from the event loop
-events.unsubscribe();
-```
-
-## Triggering all event listeners
-
-As the `trigger` method can be stopped from a single listener to call the other listeners, there is another way to call all event listeners regardless the return of each listener by using the `triggerAll` method
-
-```ts
-import events from "@mongez/events";
-
-events.on("cart.update", (cartData) => {
-  return false; // this will not prevent going to next listener
+events.subscribe("save.before", (data) => {
+  if (!isValid(data)) return false;     // veto
 });
 
-events.on("cart.update", (cartData) => {
-  console.log(cartData.totalQuantity); // this will be called as well output is: 1
+events.subscribe("save.before", (data) => {
+  if (containsSecrets(data)) return false;
 });
 
-events.triggerAll("cart.update", {
-  totalQuantity: 1,
-});
+const ok = events.trigger("save.before", payload);
+if (ok === false) return; // some hook vetoed it
+performSave(payload);
 ```
 
-Another advantage of the `triggerAll` method is that it returns an instance of `EventTriggerResponse` that informs you the state of the trigger process, the event name, number of called listeners and its outputs.
+> `false` is special. Any other falsy value (`0`, `""`, `null`) does NOT short-circuit. If you need a handler to legitimately return `false` without halting the bus, use `triggerAll` instead.
+
+### `triggerAll` — fire every listener, collect every result
 
 ```ts
+events.triggerAll(event: string, ...args: any[]): EventTriggerResponse
+
 type EventTriggerResponse = {
-  /**
-   * Event Name
-   */
   event: string;
-  /**
-   * Number of triggered callbacks
-   */
-  length: number;
-  /**
-   * List of all returned values from each subscription callback, undefined values will not be included
-   */
-  results: any[];
+  length: number;       // how many callbacks ran
+  results: any[];       // non-undefined returns, in subscription order
 };
 ```
 
-## Removing events by namespace
-
-In certain cases, we may need to remove all events that starts with certain namespace, for example we need to clear all events are related to the cart such as `cart.initialized` `cart.update` `cart.remove` `cart.reset` and so on.
-
-So instead of removing each one separately, we can remove them all by using `unsubscribeNamespace` method.
-
 ```ts
-import events from "@mongez/events";
+events.subscribe("table.columns", () => ({ field: "name",  label: "Name"  }));
+events.subscribe("table.columns", () => ({ field: "email", label: "Email" }));
 
-events.on("cart.initialized", () => {
-  console.log("Cart is initialized");
-});
-
-events.on("cart.update", (cartData) => {
-  console.log("Cart is updated");
-});
-
-events.on("cart.remove", (cartItem) => {
-  console.log(`Removed cart item ${cartItem.name}`);
-});
-
-// remove all cart listeners
-
-events.unsubscribeNamespace("cart"); // all listeners will be cleared
+const { results } = events.triggerAll("table.columns");
+// results === [{ field: "name", ... }, { field: "email", ... }]
 ```
 
-## Get all event subscriptions
+Reach for `triggerAll` for analytics fan-out, plugin contribution patterns, or anywhere you need every listener to run regardless of what each returns.
 
-To get all subscriptions of certain event, you can use the `subscriptions` method.
+---
+
+## Async dispatch
 
 ```ts
-import events from "@mongez/events";
-
-events.on("headerChange", () => {
-  console.log("Header has been changed");
-});
-
-events.on("headerChange", () => {
-  console.log("Header has been changed again");
-});
-
-// get length of all subscriptions to the `headerChange` event
-console.log(events.subscriptions("headerChange").length); // 2
+events.triggerAsync(event, ...args): Promise<any>
+events.triggerAllAsync(event, ...args): Promise<EventTriggerResponse>
 ```
 
-## TriggerAsync
+Callbacks are awaited **sequentially**, in subscription order — each one finishes before the next starts. `triggerAsync` still honors the `return false` short-circuit (after awaiting the offending callback).
 
-To trigger events asynchronously, you can use the `triggerAsync` method.
+```ts
+events.subscribe("file.uploaded", async (file) => await scanForViruses(file));
+events.subscribe("file.uploaded", async (file) => await generateThumbnail(file));
+
+// Second handler waits for the first to settle.
+await events.triggerAsync("file.uploaded", uploaded);
+```
+
+For parallel dispatch, walk the subscriptions yourself:
+
+```ts
+await Promise.all(
+  events.subscriptions("file.uploaded").map((s) => s.dispatch(uploaded)),
+);
+```
+
+---
+
+## Namespaces
+
+Event names are dot-separated strings — `users.created`, `cart.checkout`, `atoms.userAtom.update`. Anything before a `.` is a namespace, and the bus has bulk operations that match by namespace **at segment boundaries**.
+
+```ts
+events.unsubscribeNamespace(namespace: string): this
+events.getByNamespace(namespace: string): { [event: string]: EventSubscription[] }
+events.getByNamespaceArray(namespace: string): { event: string; subscriptions: EventSubscription[] }[]
+```
+
+Internally the match is `event === namespace || event.startsWith(namespace + ".")`. That extra `.` is the whole point — naive prefix matching would treat `users.10` as a child of `users.1`.
+
+| namespace | matches | doesn't match |
+|---|---|---|
+| `"users"` | `users`, `users.1`, `users.1.updated` | `usersTable`, `users2` |
+| `"users.1"` | `users.1`, `users.1.profile` | `users.10`, `users.11`, `users.100` |
+| `"atoms.cart"` | `atoms.cart.update`, `atoms.cart.reset` | `atoms.cartItems.update` |
+
+```ts
+events.subscribe("users.created", onCreate);
+events.subscribe("users.updated", onUpdate);
+events.subscribe("users.deleted", onDelete);
+
+// One call drops all three.
+events.unsubscribeNamespace("users");
+```
+
+> `@mongez/atom` is the canonical user of this. Every atom emits under `atoms.${key}`, and `atom.destroy()` runs `events.unsubscribeNamespace(`atoms.${key}`)` — the segment-aware match ensures destroying `users.1` doesn't wipe `users.10`.
+
+---
+
+## Cleanup
+
+```ts
+events.unsubscribe(event?: string): this    // detach one event, or every event when undefined
+events.off(event?: string): this            // alias
+```
+
+Three levels of teardown:
+
+```ts
+sub.unsubscribe();                  // one subscription
+events.off("header.change");        // every listener on that event
+events.unsubscribeNamespace("users"); // every listener under a namespace
+events.unsubscribe();               // every listener on every event (test teardown)
+```
+
+> `events.unsubscribe()` with no argument wipes the whole bus. That's almost always what you want in `afterEach` for tests — never in production code.
+
+---
+
+## Inspecting
+
+```ts
+events.subscriptions(event: string): EventSubscription[]
+```
+
+Returns every subscription currently registered for a single event. Useful for debugging, for `Promise.all` parallel dispatch (above), or for asserting in tests.
+
+```ts
+events.subscribe("header.change", () => {});
+events.subscribe("header.change", () => {});
+
+events.subscriptions("header.change").length; // 2
+```
+
+For multi-event introspection, use `getByNamespaceArray("...")` and walk the result.
+
+---
+
+## Recipes
+
+### Broadcast `user.login` across features
+
+Reach for this when several unrelated features (analytics, header, cart, notifications) all need to react to the same auth event without knowing about each other.
+
+```ts
+// src/features/auth/loginFlow.ts
+import events from "@mongez/events";
+
+export async function login(credentials: Credentials) {
+  const user = await api.login(credentials);
+  events.trigger("user.login", user);
+  return user;
+}
+```
+
+```ts
+// src/features/analytics/index.ts
+import events from "@mongez/events";
+
+events.subscribe("user.login", (user) => {
+  analytics.identify(user.id);
+  analytics.track("Logged In");
+});
+```
+
+```ts
+// src/features/header/UserBadge.tsx
+import events from "@mongez/events";
+import { useEffect, useState } from "react";
+
+export function UserBadge() {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const sub = events.subscribe("user.login", setUser);
+    return () => sub.unsubscribe();
+  }, []);
+
+  return user ? <span>Hi, {user.name}</span> : null;
+}
+```
+
+Each feature subscribes and cleans up locally; the login flow stays ignorant of every consumer.
+
+### Cancel a save with veto
+
+Reach for this when you want plugins (or a validation pipeline) to block an action without throwing or wrapping the call in conditionals.
 
 ```ts
 import events from "@mongez/events";
 
-events.on("cart.update", (cartData) => {
-  console.log(cartData.totalQuantity); // output: 0
+events.subscribe("post.beforeSave", (post) => {
+  if (post.title.length < 3) return false; // veto — too short
 });
 
-async function main() {
-  await events.triggerAsync("cart.update", {
-    totalQuantity: 0,
-  });
+events.subscribe("post.beforeSave", (post) => {
+  if (containsBannedWords(post.body)) return false; // veto — moderation
+});
+
+export function savePost(post: Post) {
+  const ok = events.trigger("post.beforeSave", post);
+  if (ok === false) {
+    showToast("Post rejected by a pre-save check.");
+    return;
+  }
+
+  api.save(post);
+  events.trigger("post.afterSave", post);
+}
+```
+
+Any subscriber can halt the save by returning `false`, and the rest of the chain never runs.
+
+### Mount and unmount a feature with one namespace
+
+Reach for this whenever a feature registers several listeners on boot and needs to drop them all on tear-down — feature flags, lazy-loaded modules, multi-tenant apps.
+
+```ts
+import events from "@mongez/events";
+
+export function mountUsersFeature() {
+  events.subscribe("users.created", onCreate);
+  events.subscribe("users.updated", onUpdate);
+  events.subscribe("users.deleted", onDelete);
+  events.subscribe("users.exported", onExport);
 }
 
-main();
+export function unmountUsersFeature() {
+  events.unsubscribeNamespace("users"); // drops all four in one call
+}
 ```
 
-This will wait for each listener to finish its execution before going to the next listener.
+> Naming matters here. If you name events `usersCreated` instead of `users.created`, namespace cleanup can't help you — the dot is what the matcher keys off.
 
-> If any resolved value is returned from any listener, the last resolved value will be returned and all remaining callbacks will be ignored.
+### Sequential async pipeline on upload
 
-## TriggerAllAsync
-
-To trigger all events asynchronously, you can use the `triggerAllAsync` method.
+Reach for this when downstream steps need to observe the output of upstream ones — virus scan must finish before thumbnail generation reads the file.
 
 ```ts
 import events from "@mongez/events";
 
-events.on("cart.update", (cartData) => {
-  console.log(cartData.totalQuantity); // output: 0
+events.subscribe("file.uploaded", async (file) => {
+  await scanForViruses(file); // must finish first
 });
 
-async function main() {
-  await events.triggerAllAsync("cart.update", {
-    totalQuantity: 0,
-  });
-}
+events.subscribe("file.uploaded", async (file) => {
+  await generateThumbnail(file); // runs only after the scan resolves
+});
 
-main();
+events.subscribe("file.uploaded", async (file) => {
+  await indexForSearch(file);
+});
+
+await events.triggerAsync("file.uploaded", uploadedFile);
 ```
 
-Works exactly like `triggerAsync` but it will call all listeners regardless the return of each listener.
+For independent steps, swap to `Promise.all(events.subscriptions("file.uploaded").map(s => s.dispatch(file)))` for true parallelism.
 
-## Tests
+### Wipe the bus between tests
 
-To run the tests, run the following command
+Reach for this in any test suite that uses the singleton — without teardown, listeners from one test leak into the next.
 
-```bash
-yarn test
+```ts
+import { afterEach } from "vitest";
+import events from "@mongez/events";
+
+afterEach(() => {
+  events.unsubscribe(); // detach every listener on every event
+});
+
+it("logs the user in", async () => {
+  const spy = vi.fn();
+  events.subscribe("user.login", spy);
+  await login(creds);
+  expect(spy).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }));
+});
+// afterEach runs — bus is clean before the next test.
 ```
 
-## Change Log
+---
 
-- V2.0.0 (01 Mar 2023)
-  - Removed multiple events subscriptions and unsubscriptions.
-  - Added Unit Tests.
-  - Enhanced parameters and return types.
+## Related packages
 
-## TODO
+| Package | Use when you need |
+|---|---|
+| [`@mongez/atom`](https://github.com/hassanzohdy/atom) | Reactive state primitive. Every atom emits its lifecycle (`atoms.${key}.update`, `…reset`, `…delete`) through this bus — namespace cleanup on `atom.destroy()` is built on `unsubscribeNamespace`. |
+| [`@mongez/cache`](https://github.com/hassanzohdy/mongez-cache) | Synchronous cache facade. Doesn't emit on its own — wrap its `set` / `remove` with `events.trigger` when you need write-through subscriptions (cross-tab sync, analytics, debugging). |
+| [`@mongez/react-atom`](https://github.com/hassanzohdy/react-atom) | React bindings on top of `@mongez/atom`. For component-to-component state coordination, prefer atoms over ad-hoc events. |
 
-- Add `triggerAsync` method to trigger events asynchronously.
-- Add `triggerAllAsync` method to trigger all events asynchronously.
+For the full single-file API surface, see [`llms-full.txt`](./llms-full.txt).
+
+---
+
+## License
+
+MIT
