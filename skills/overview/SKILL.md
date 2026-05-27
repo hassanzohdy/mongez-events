@@ -14,10 +14,33 @@ It's the substrate `@mongez/atom` uses for atom lifecycle events (`atoms.${key}.
 ## Install
 
 ```sh
+# npm
+npm install @mongez/events
+
+# yarn
 yarn add @mongez/events
+
+# pnpm
+pnpm add @mongez/events
 ```
 
 Zero runtime dependencies.
+
+## Quick example
+
+Subscribe to a named event from anywhere, trigger it from anywhere else, detach when you're done:
+
+```ts
+import events from "@mongez/events";
+
+const sub = events.subscribe("cart.update", (cart) => {
+  console.log("cart now has", cart.totalQuantity, "items");
+});
+
+events.trigger("cart.update", { totalQuantity: 3 });
+
+sub.unsubscribe();
+```
 
 ## Import pattern
 
