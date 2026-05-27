@@ -2,7 +2,7 @@
 name: mongez-events-namespaces
 description: |
   How dot-separated event namespaces work in @mongez/events — bulk cleanup, bulk query, and segment-boundary matching semantics.
-  TRIGGER when: code calls `events.unsubscribeNamespace`, `events.getByNamespace`, or `events.getByNamespaceArray`, or references types `EventListeners` / `EventListenersList`; user asks "how do I clean up all listeners for a feature", "how does namespace matching work", "why doesn't `users.1` match `users.10`"; dot-separated event names like `users.created` or `atoms.${key}.update` appear in the code.
+  TRIGGER when: code calls `events.unsubscribeNamespace`, `events.getByNamespace`, or `events.getByNamespaceArray`; user asks "how do I clean up all listeners for a feature", "how does namespace matching work", "why doesn't `users.1` match `users.10`"; dot-separated event names like `users.created` or `atoms.${key}.update` appear in the code.
   SKIP: single-event `subscribe`/`trigger`/`unsubscribe` calls — use `mongez-events-bus` instead; onboarding / "what is this package" questions — use `mongez-events-overview`; copy-paste recipes (veto, aggregation, async chains, React `useEffect`) — use `mongez-events-recipes`; CSS / DOM namespacing concerns are unrelated.
 ---
 # Namespaces
@@ -14,14 +14,11 @@ Event names are dot-separated strings. Anything before a `.` segment is a namesp
 ```ts
 events.unsubscribeNamespace(namespace: string): this
 
-events.getByNamespace(namespace: string): EventListeners
-events.getByNamespaceArray(namespace: string): EventListenersList
+events.getByNamespace(namespace: string): { [eventName: string]: EventSubscription[] }
+events.getByNamespaceArray(namespace: string): { event: string; subscriptions: EventSubscription[] }[]
 ```
 
-```ts
-type EventListeners       = { [eventName: string]: EventSubscription[] };
-type EventListenersList   = { event: string; subscriptions: EventSubscription[] }[];
-```
+> The return shapes have internal type aliases (`EventListeners`, `EventListenersList`) inside the source, but they are NOT re-exported from `@mongez/events`. Let TypeScript infer them at the call site, or copy the inline shapes above if you need to name them in your own code.
 
 ## Why segment-aware
 

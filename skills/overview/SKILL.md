@@ -2,7 +2,7 @@
 name: mongez-events-overview
 description: |
   High-level orientation to the @mongez/events package — what it is, when to use it, and the mental model behind the global bus.
-  TRIGGER when: code introduces a first `import events from "@mongez/events"` (or pulls types `EventSubscription`, `EventListeners`, `EventListenersList`, `EventTriggerResponse`); user asks "what is @mongez/events", "when should I use @mongez/events vs @mongez/atom / RxJS / BroadcastChannel", "how do I install @mongez/events", "what's the mental model of the events bus".
+  TRIGGER when: code introduces a first `import events from "@mongez/events"` (or pulls types `EventSubscription`, `EventTriggerResponse`); user asks "what is @mongez/events", "when should I use @mongez/events vs @mongez/atom / RxJS / BroadcastChannel", "how do I install @mongez/events", "what's the mental model of the events bus".
   SKIP: concrete API signatures and call semantics — use `mongez-events-bus`; namespace matching rules and bulk cleanup — use `mongez-events-namespaces`; idiomatic recipes (veto, aggregation, React, tests) — use `mongez-events-recipes`; React state coordination questions are usually better answered by `@mongez/react-atom`.
 ---
 # Overview
@@ -47,11 +47,11 @@ sub.unsubscribe();
 ```ts
 import events, {
   type EventSubscription,
-  type EventListeners,
-  type EventListenersList,
   type EventTriggerResponse,
 } from "@mongez/events";
 ```
+
+Only `EventSubscription` and `EventTriggerResponse` are re-exported from the package entry point. The internal `EventListeners` / `EventListenersList` shapes are not exported — let TypeScript infer them from `getByNamespace` / `getByNamespaceArray` returns instead.
 
 ## When to reach for this
 
