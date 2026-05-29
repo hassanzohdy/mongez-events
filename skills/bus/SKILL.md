@@ -2,8 +2,6 @@
 name: mongez-events-bus
 description: |
   Full API reference for the @mongez/events singleton — subscribe, trigger, triggerAll, async variants, inspect, and direct dispatch.
-  TRIGGER when: code calls `events.subscribe`, `events.on`, `events.addEventListener`, `events.trigger`, `events.emit`, `events.triggerAll`, `events.triggerAsync`, `events.triggerAllAsync`, `events.unsubscribe`, `events.off`, `events.subscriptions`, or returns/uses `EventSubscription` / `EventTriggerResponse`; user asks "how do I subscribe to an event", "how do I emit an event", "how do I veto with return false", "how do I run handlers in parallel"; `import events from "@mongez/events"`.
-  SKIP: bulk namespace cleanup or `getByNamespace` queries — use `mongez-events-namespaces` instead; high-level orientation / when-to-use questions — use `mongez-events-overview`; idiomatic patterns (veto, aggregation, React cleanup) — use `mongez-events-recipes`; native DOM `addEventListener` on `window` / elements is not this package.
 ---
 # Events bus
 
