@@ -1,20 +1,20 @@
 import { EventListeners, EventListenersList, EventSubscription } from "./types";
 
 export default class EventsListeners {
-  protected listeners: EventListeners = {};
+  protected listeners: Map<string, EventSubscription[]> = new Map();
 
   /**
    * Add event subscriptions
    */
   public set(event: string, subscriptions: EventSubscription[]) {
-    this.listeners[event] = subscriptions;
+    this.listeners.set(event, subscriptions);
   }
 
   /**
    * Get all subscriptions for the given event
    */
   public get(event: string) {
-    const subscriptions: EventSubscription[] = this.listeners[event] || [];
+    const subscriptions: EventSubscription[] = this.listeners.get(event) || [];
 
     return subscriptions;
   }
@@ -23,21 +23,21 @@ export default class EventsListeners {
    * Clear all events
    */
   public clear() {
-    this.listeners = {};
+    this.listeners = new Map();
   }
 
   /**
    * Check if the given event has subscriptions
    */
   public has(event: string) {
-    return typeof this.listeners[event] !== "undefined";
+    return this.listeners.has(event);
   }
 
   /**
    * Delete the given event
    */
   public delete(event: string) {
-    delete this.listeners[event];
+    this.listeners.delete(event);
   }
 
   /**
@@ -55,9 +55,9 @@ export default class EventsListeners {
    */
   public getByNamespace(namespace: string) {
     let events: EventListeners = {};
-    for (const event in this.listeners) {
+    for (const [event, subscriptions] of this.listeners) {
       if (this.matchesNamespace(event, namespace)) {
-        events[event] = this.listeners[event];
+        events[event] = subscriptions;
       }
     }
 
@@ -69,11 +69,11 @@ export default class EventsListeners {
    */
   public getByNamespaceArray(namespace: string) {
     let eventSubscriptions: EventListenersList = [];
-    for (const event in this.listeners) {
+    for (const [event, subscriptions] of this.listeners) {
       if (this.matchesNamespace(event, namespace)) {
         eventSubscriptions.push({
           event: event,
-          subscriptions: this.listeners[event],
+          subscriptions,
         });
       }
     }
@@ -86,9 +86,9 @@ export default class EventsListeners {
    * i.e "users" namespace will affect on: users.created, users.updated, users.deleted will be deleted
    */
   public deleteByNamespace(namespace: string): void {
-    for (const event in this.listeners) {
+    for (const event of this.listeners.keys()) {
       if (this.matchesNamespace(event, namespace)) {
-        delete this.listeners[event];
+        this.listeners.delete(event);
       }
     }
   }
