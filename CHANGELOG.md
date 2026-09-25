@@ -4,6 +4,11 @@ All notable changes to `@mongez/events` are documented here. The format follows 
 
 ---
 
+## [2.2.8] — 2026-09-25
+
+### Changed
+- Added a grouped Agent Kit skills index for topic-based discovery.
+
 ## [2.2.7] — 2026-08-17
 
 ### Security
