@@ -1,5 +1,5 @@
 ---
-description: "A tiny, zero-dependency global event bus for JavaScript and TypeScript. Exports the `events` singleton for named pub/sub with `subscribe`/`on`, `trigger`/`emit`, synchronous and sequential async dispatch, cancellation when a handler returns `false`, response aggregation, direct subscription dispatch, and namespace-scoped listener inspection and cleanup. Use for: \"notify independent modules\", \"cancellable before hooks\", \"feature lifecycle listeners\", \"collect plugin responses\", \"remove listeners under a dot-separated namespace\". Not this package → reactive application state, actions, persistence, or derived values: @mongez/atom; React atom hooks and component subscriptions: @mongez/react-atom; browser DOM event listeners: the platform `EventTarget`."
+description: "A tiny, zero-dependency global event bus for JavaScript and TypeScript: the `events` singleton with `subscribe`/`on`, `trigger`/`emit`, sync and sequential async dispatch, cancellation via `false`, response aggregation, and namespace-scoped listener cleanup. Use for: \"notify independent modules\", \"cancellable before hooks\", \"collect plugin responses\", \"remove listeners under a namespace\". Not this package → reactive state: @mongez/atom; React atom hooks: @mongez/react-atom; DOM event listeners: platform `EventTarget`."
 ---
 
 # @mongez/events
