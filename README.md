@@ -108,6 +108,8 @@ type EventSubscription = {
 
 > There is no `off(event, callback)` form. Hold onto the returned subscription and call `unsubscribe()` when you're done — that's the only way to detach a single listener without affecting the rest.
 
+A listener may unsubscribe itself (or another listener) while the event is being dispatched: every trigger method iterates over a snapshot of the listeners taken when the trigger starts, so no listener is skipped. A listener that is unsubscribed mid-dispatch is skipped if it has not run yet; one added mid-dispatch first runs on the next trigger.
+
 ```ts
 const headerSub = events.subscribe("header.change", () => {
   console.log("header changed");

@@ -28,6 +28,8 @@ type EventSubscription = {
 
 Hold the returned subscription and call `unsubscribe()` when you no longer want the callback.
 
+A listener can unsubscribe itself (or another) during dispatch: every trigger method iterates over a snapshot of the listeners taken at trigger time, so no listener is skipped. A listener that is unsubscribed mid-dispatch is skipped if it has not run yet; one added mid-dispatch first runs on the next trigger.
+
 ## Trigger
 
 ```ts

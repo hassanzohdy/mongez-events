@@ -22,7 +22,7 @@ The whole API lives on a single default export — `import events from "@mongez/
 ## Quick rules
 
 1. **One default export.** `import events from "@mongez/events"`. Access methods on the `events` instance.
-2. **Subscription returns `{ unsubscribe }`.** Hold onto it; call `unsubscribe()` to detach. There's no manual `off(event, callback)` — use the returned handle.
+2. **Subscription returns `{ unsubscribe }`.** Hold onto it; call `unsubscribe()` to detach. There's no manual `off(event, callback)` — use the returned handle. A listener may unsubscribe itself mid-dispatch: triggers iterate a snapshot taken when they start, so no listener is skipped (one unsubscribed mid-dispatch is skipped if it has not run yet; one added mid-dispatch first runs on the next trigger).
 3. **`trigger` (alias `emit`) stops on `false`.** If any callback returns `false`, the trigger short-circuits and returns `false`. Use `triggerAll` if you don't want that behavior.
 4. **Namespace matching is segment-aware.** `unsubscribeNamespace("users.1")` matches `users.1` and `users.1.updated` but NOT `users.10` or `users.100`.
 5. **Async variants run callbacks sequentially.** `triggerAsync` awaits each callback in order. Use `Promise.all` yourself if you want parallel.

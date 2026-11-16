@@ -4,6 +4,16 @@ All notable changes to `@mongez/events` are documented here. The format follows 
 
 ---
 
+## [2.2.10] — 2026-11-16
+
+### Fixed
+
+- **A listener that unsubscribes itself during dispatch no longer makes the next listener get skipped.** `trigger`, `triggerAll`, `triggerAsync` and `triggerAllAsync` iterate a snapshot of the listeners.
+
+### Changed
+
+- Dispatch uses the listeners present when the event fired: one added mid-dispatch first runs on the next trigger (it used to run in the same dispatch). A listener that another listener unsubscribes mid-dispatch is still skipped, as before.
+
 ## [2.2.8] — 2026-09-25
 
 ### Changed

@@ -8,6 +8,13 @@ class Events {
   private events = new EventsListeners();
 
   /**
+   * Subscriptions removed with their own `unsubscribe()`. Dispatch iterates a
+   * snapshot (so a listener that removes itself does not make the next one
+   * get skipped) and skips any listener removed after the snapshot was taken.
+   */
+  private removedSubscriptions = new WeakSet<EventSubscription>();
+
+  /**
    * Add new callback to the given event
    *
    * @alias subscribe
@@ -35,6 +42,7 @@ class Events {
         return callback(...args);
       },
       unsubscribe: () => {
+        this.removedSubscriptions.add(subscription);
         let index = eventHandler.indexOf(subscription);
         if (index !== -1) {
           eventHandler.splice(index, 1);
@@ -59,7 +67,9 @@ class Events {
 
     let returnValue;
 
-    for (let callback of callbacks) {
+    for (let callback of [...callbacks]) {
+      if (this.removedSubscriptions.has(callback)) continue;
+
       let callbackReturn = callback.dispatch(...args);
 
       if (callbackReturn === false) {
@@ -95,7 +105,9 @@ class Events {
       return returnedOutput;
     }
 
-    for (let callback of callbacks) {
+    for (let callback of [...callbacks]) {
+      if (this.removedSubscriptions.has(callback)) continue;
+
       let callbackReturn = callback.dispatch(...args);
 
       returnedOutput.length++;
@@ -118,7 +130,9 @@ class Events {
 
     let returnValue;
 
-    for (let callback of callbacks) {
+    for (let callback of [...callbacks]) {
+      if (this.removedSubscriptions.has(callback)) continue;
+
       let callbackReturn = await callback.dispatch(...args);
 
       if (callbackReturn === false) {
@@ -147,7 +161,9 @@ class Events {
       return returnedOutput;
     }
 
-    for (let callback of callbacks) {
+    for (let callback of [...callbacks]) {
+      if (this.removedSubscriptions.has(callback)) continue;
+
       let callbackReturn = await callback.dispatch(...args);
 
       returnedOutput.length++;
